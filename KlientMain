@@ -1,0 +1,180 @@
+#include "Klient.h"
+
+int main()
+{
+	Klient client("192.168.8.101", 5555);
+	//client.Polacz();
+	while (!client.Polacz()){
+		std::cout << "Nie polaczono z serwerem!\n";
+		//etchar();
+		//client.Polacz();
+		//return 0;
+	}
+	bool program = true;
+	std::string buffer;
+	char wyb;
+	cout <<
+		" 1) wyslij zaproszenie\n" <<
+		" 2) zaakceptuj zaproszenie\n" <<
+		" 3) odrzuc zaproszenie\n" <<
+		" 4) wyslij wiadomosc\n" <<
+		" 5) zakoncz polaczenie z uzytkownikiem\n" <<
+		" 6) zakoncz polaczenie z serwerem\n" <<
+		" 7) wylacz program\n" <<
+		" 8) polacz z serwerem\n";
+
+	while (program)
+	{
+		Sleep(10);
+		getline(cin, buffer);
+		wyb = buffer[0];
+		switch (wyb)
+		{
+		case '1':
+		{
+			if (client.polaczony == false)
+			{
+				cout << "Nie jestes podlaczony z sewerem!\n";
+				break;
+			}
+			client.wyslijProtokol(new Protokol(PacketHeader::Invite , 0, "", client.zwrocID()));
+			cout << "Wyslano zaproszenie!\n";
+			client.wyslaneZaproszenie = true;
+			break;
+		}
+		case '2':
+		{
+			if (client.polaczony == false)
+			{
+				cout << "Nie jestes podlaczony do sewera!\n";
+				break;
+			}
+			if (client.oczekujaceZaproszenie)
+			{
+				client.wyslijProtokol(new Protokol(PacketHeader::InviteAccpet, 0, "", client.zwrocID()));
+				client.oczekujaceZaproszenie = false;
+				client.innyKlient = true;
+			}
+			else
+			{
+				cout << "Nie masz zadnego zaproszenia\n";
+			}
+			break;
+		}
+		case '3':
+		{
+			if (client.polaczony == false)
+			{
+				cout << "Nie jestes podlaczony z serwerem!\n";
+				break;
+			}
+			if (client.oczekujaceZaproszenie)
+			{
+				client.wyslijProtokol(new Protokol(PacketHeader::InviteDecline, 0, "", client.zwrocID()));
+				client.oczekujaceZaproszenie = false;
+				client.innyKlient = false;
+			}
+			else
+			{
+				cout << "Nie masz zadnego zaproszenia!\n";
+			}
+			break;
+		}
+		case '4':
+		{
+			if (client.polaczony == false)
+			{
+				cout << "Nie jestes podlaczony do sewera.\n";
+				break;
+			}
+			if (!client.innyKlient)
+			{
+				cout << "Nie jestes polaczony z uzytkownikiem, nie mozesz tego zrobic.\n";
+				break;
+			}
+			cout << "Wiadmosc:\n";
+			getline(cin, buffer);
+			//buffer += '\0';
+			client.wyslijProtokol(new Protokol(PacketHeader::Message, buffer.size(), buffer, client.zwrocID()));
+			cout << "# Wiadomosc wyslana. #\n";
+			break;
+		}
+		case '5':
+		{
+			if (client.polaczony == false)
+			{
+				cout << "Nie jestes podlaczony do sewera.\n";
+				break;
+			}
+			if (!client.innyKlient)
+			{
+				cout << "Nie jestes polaczony z uzytkownikiem, nie mozesz tego zrobic.\n";
+				break;
+			}
+			client.wyslijProtokol(new Protokol(PacketHeader::Bye, 0, "", client.zwrocID()));
+			cout << "Zakonczono polaczenie z uzytkownikiem.\n";
+			break;
+		}
+		case '6':
+		{
+			if (client.polaczenie == INVALID_SOCKET || client.polaczony == false)
+			{
+				cout << "Nie jestes podlaczony do sewera.\n ";
+				break;
+			}
+			if (client.zakonczPolaczenie())
+			{
+				cout << "Rozlaczono z serwerem.\n ";
+				client.polaczony = false;
+			}
+			break;
+		}
+		case '7':
+		{
+			if (client.zakonczPolaczenie()) {
+				std::cout << "Poprawnie zamknieto gniazdo." << std::endl;
+			}
+			else
+			{
+				std::cout << "Blad podczas zamykania gniazda." << std::endl;
+			}
+			return 0;
+			break;
+		}
+		case '8':
+		{
+			if (client.polaczony == true)
+			{
+				cout << "Jestes juz podlaczony do sewera.\n";
+				break;
+			}
+			if (client.Polacz())
+			{
+				cout << "Polaczono z serwerem.\n";
+				break;
+			}
+			else
+			{
+				cout << "Nie mozna polaczyc z serwerem:" << WSAGetLastError() << "\n";
+				break;
+			}
+			break;
+		}
+		default:
+		{
+			cout <<
+				" 1) wyslij zaproszenie\n" <<
+				" 2) zaakceptuj zaproszenie\n" <<
+				" 3) odrzuc zaproszenie\n" <<
+				" 4) wyslij wiadomosc\n" <<
+				" 5) zakoncz polaczenie z uzytkownikiem\n" <<
+				" 6) zakoncz polaczenie z serwerem\n" <<
+				" 7) wylacz program\n" <<
+				" 8) polacz z serwerem\n";
+			break;
+		}
+		}
+		Sleep(10);
+	}
+    return EXIT_SUCCESS;
+}
